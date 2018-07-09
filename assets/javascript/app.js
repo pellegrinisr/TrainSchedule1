@@ -1,18 +1,16 @@
 $(document).ready(function() {
-    // Initialize Firebase
+  // Initialize Firebase
     var config = {
-        apiKey: "AIzaSyBfkrcYB3NxjPy7jTxLNO4MDnwfCES47Wk",
-        authDomain: "trainscheduleproject-98879.firebaseapp.com",
-        databaseURL: "https://trainscheduleproject-98879.firebaseio.com",
-        projectId: "trainscheduleproject-98879",
-        storageBucket: "",
-        messagingSenderId: "637219215012"
+        apiKey: "AIzaSyACIYPLKVwXPdyHwNCPOl5IEzLb-gqzP18",
+        authDomain: "newtrainscheduleproject.firebaseapp.com",
+        databaseURL: "https://newtrainscheduleproject.firebaseio.com",
+        projectId: "newtrainscheduleproject",
+        storageBucket: "newtrainscheduleproject.appspot.com",
+        messagingSenderId: "57650586858"
     };
     firebase.initializeApp(config);
 
     var database = firebase.database();
-
-    database.ref('trains/').on('value', onValueUpdate);
 
     $('#add-train-button').on('click', function() {
         if (validateInput()) {
@@ -35,7 +33,8 @@ $(document).ready(function() {
             for (var i = firstTimeInMins; i <= 1440; i+=parseInt(frequency)) {
                 arrivalTimeArray.push(i);
             }
-            database.ref('trains/' + trainName).set({
+            database.ref().push({
+                trainName: trainName,
                 trainDestination: trainDestination,
                 firstTrainTime: firstTrainTime,
                 frequency: frequency,
@@ -44,19 +43,17 @@ $(document).ready(function() {
             clearForm();
         }
     });
-
-    function onValueUpdate(snapshot) {
-        $('.train-data').html('');
-        snapshot.forEach(function(childSnapshot) {
-            var childKey = childSnapshot.key;
-            var childData = childSnapshot.val();
-            console.log('child data array: ' + childData.arrivalTimes);
-            var nextArrivalTime = findNextTime(childData.arrivalTimes);
-            console.log(childKey + ' ' + childData.trainDestination + ' ' + childData.firstTrainTime + ' ' + childData.frequency);
-            var minutesAway = calcMinutesAway(nextArrivalTime);
-            addToTable(childKey, childData.trainDestination, childData.frequency, nextArrivalTime, minutesAway);
-        });
-    }
+    database.ref().on('child_added', function(snapshot) {
+        var newTrain = snapshot.val();
+        console.log('inside "child_added" handler: ' + newTrain.trainName);
+        var nextArrivalTime = findNextTime(newTrain.arrivalTimes);
+        var nextArrivalTimeString = produceTimeString(nextArrivalTime);
+        var minutesAway = calcMinutesAway(nextArrivalTime);
+        console.log('next arrival time: ' + nextArrivalTime);
+        if (nextArrivalTime)
+        addToTable(newTrain.trainName, newTrain.trainDestination, newTrain.frequency, nextArrivalTimeString, minutesAway);
+        
+    });
 
     function addToTable(name, dest, freq, nextArrivalString, minutesAway) {
         var newRowTag = $('<tr>');
@@ -127,11 +124,26 @@ $(document).ready(function() {
         $('#frequency').val('');
     }
 
+    // function momentNextTime(arrayArrivalTimes) {
+    //     var currentTime = moment().unix();
+    //     var nextTrain;
+    //     var isFound = false;
+    //     var i = 0;
+    //     while (!isFound && i < arrayArrivalTimes.length) {
+    //         if (currentTime < )
+    //     }
+    // }
+
     function findNextTime(arrayArrivalTimes) {
         var currentTime = new Date();
+        //var currentTime = moment();
+        //console.log(currentTime.format('HH'));
         var currentHours = currentTime.getHours();
+        //var currentHours = currentTime.format('H');
         var currentMins = currentTime.getMinutes();
+      //var currentMins = currentTime.format('m');
         var currentSeconds = currentTime.getSeconds();
+       //var currentSeconds = currentTime.format('s');
         var nextTrain;
         var isFound = false;
         var i = 0;
@@ -150,32 +162,53 @@ $(document).ready(function() {
                 i++;
             }
         }
+        
         console.log(nextTrain);
-        var nextTimeHours = parseInt(nextTrain / 60);
-        console.log('hours: ' + nextTimeHours);
-        var nextTimeMins = nextTrain % 60;
-        console.log('minutes: ' + nextTimeMins);
+        return nextTrain;
+       
+    }
 
+    function produceTimeString(timeInMinutes) {
+        var nextTimeHours = parseInt(timeInMinutes / 60);
+        console.log('hours: ' + nextTimeHours);
+        var nextTimeMins = timeInMinutes % 60;
+        var amPM = '';
+        console.log('minutes: ' + nextTimeMins);
+        
+        if (nextTimeHours < 12) {
+            amPM = 'AM';
+        } else {
+            amPM = 'PM'
+        }
         if (nextTimeHours <= 9) {
-            nextTimeHours = '0' + nextTimeHours;
+             nextTimeHours = '0' + nextTimeHours;
+        } else if (nextTimeHours >= 13) {
+            nextTimeHours -= 12;
         }
         if (nextTimeMins === 0) { 
             nextTimeMins = '0' + nextTimeMins;
         }
-        var nextArrivalString = nextTimeHours + ':' + nextTimeMins;
+        var nextArrivalString = nextTimeHours + ':' + nextTimeMins + ' ' + amPM;
         return nextArrivalString;
     }
 
-    function calcMinutesAway(arrivalTimeString) {
+    function calcMinutesAway(arrivalTimeInMinutes) {
         var time = new Date();
         var timeInMins = time.getHours() * 60 + time.getMinutes();
-        var nextTimeAfterSplit = arrivalTimeString.split(':');
-        var nextTimeInMins = nextTimeAfterSplit[0] * 60 + parseInt(nextTimeAfterSplit[1]);
-        var minutesAway = nextTimeInMins - timeInMins;
+       // var nextTimeAfterSplit = arrivalTimeString.split(':');
+       // console.log(nextTimeAfterSplit);
+      //  var nextTimeInMins = nextTimeAfterSplit[0] * 60 + parseInt(nextTimeAfterSplit[1]);
+      //  console.log('nextTimeInMins: ' + nextTimeInMins);
+        var minutesAway = arrivalTimeInMinutes - timeInMins;
         if (minutesAway < 0) {
             var minsTillMidnight = 1440 - timeInMins;
-            minutesAway = minsTillMidnight + nextTimeInMins;
+            minutesAway = minsTillMidnight + arrivalTimeInMinutes;
         }
         return minutesAway;
     }
+
+    function testFunction() {
+        var myTime = moment('1440', )
+    }
+    
 });
