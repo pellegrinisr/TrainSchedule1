@@ -43,6 +43,7 @@ $(document).ready(function() {
             clearForm();
         }
     });
+    
     database.ref().on('child_added', function(snapshot) {
         var newTrain = snapshot.val();
         console.log('inside "child_added" handler: ' + newTrain.trainName);
@@ -50,7 +51,6 @@ $(document).ready(function() {
         var nextArrivalTimeString = produceTimeString(nextArrivalTime);
         var minutesAway = calcMinutesAway(nextArrivalTime);
         console.log('next arrival time: ' + nextArrivalTime);
-        if (nextArrivalTime)
         addToTable(newTrain.trainName, newTrain.trainDestination, newTrain.frequency, nextArrivalTimeString, minutesAway);
         
     });
@@ -124,26 +124,11 @@ $(document).ready(function() {
         $('#frequency').val('');
     }
 
-    // function momentNextTime(arrayArrivalTimes) {
-    //     var currentTime = moment().unix();
-    //     var nextTrain;
-    //     var isFound = false;
-    //     var i = 0;
-    //     while (!isFound && i < arrayArrivalTimes.length) {
-    //         if (currentTime < )
-    //     }
-    // }
-
     function findNextTime(arrayArrivalTimes) {
         var currentTime = new Date();
-        //var currentTime = moment();
-        //console.log(currentTime.format('HH'));
         var currentHours = currentTime.getHours();
-        //var currentHours = currentTime.format('H');
         var currentMins = currentTime.getMinutes();
-      //var currentMins = currentTime.format('m');
         var currentSeconds = currentTime.getSeconds();
-       //var currentSeconds = currentTime.format('s');
         var nextTrain;
         var isFound = false;
         var i = 0;
@@ -165,7 +150,6 @@ $(document).ready(function() {
         
         console.log(nextTrain);
         return nextTrain;
-       
     }
 
     function produceTimeString(timeInMinutes) {
@@ -195,10 +179,6 @@ $(document).ready(function() {
     function calcMinutesAway(arrivalTimeInMinutes) {
         var time = new Date();
         var timeInMins = time.getHours() * 60 + time.getMinutes();
-       // var nextTimeAfterSplit = arrivalTimeString.split(':');
-       // console.log(nextTimeAfterSplit);
-      //  var nextTimeInMins = nextTimeAfterSplit[0] * 60 + parseInt(nextTimeAfterSplit[1]);
-      //  console.log('nextTimeInMins: ' + nextTimeInMins);
         var minutesAway = arrivalTimeInMinutes - timeInMins;
         if (minutesAway < 0) {
             var minsTillMidnight = 1440 - timeInMins;
@@ -206,9 +186,4 @@ $(document).ready(function() {
         }
         return minutesAway;
     }
-
-    function testFunction() {
-        var myTime = moment('1440', )
-    }
-    
 });
